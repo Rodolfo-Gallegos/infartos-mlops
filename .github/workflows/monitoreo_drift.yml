@@ -1,0 +1,143 @@
+name: Monitoreo Drift — Prevención Infartos
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Lunes 8am UTC
+  workflow_dispatch:
+    inputs:
+      lote:
+        description: 'Nombre del lote de producción'
+        required: false
+        default: 'lote_manual'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'pipeline/**'
+      - 'requirements.txt'
+
+jobs:
+  lint-monitoreo:
+    name: Lint código de monitoreo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - run: pip install flake8
+      - run: flake8 src/ --config=setup.cfg
+
+  monitoreo-drift:
+    name: Pipeline de Monitoreo
+    runs-on: ubuntu-latest
+    needs: lint-monitoreo
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Generar datos de referencia y producción (simulados)
+        run: |
+          mkdir -p data reportes artifacts
+          python -c "
+          import pandas as pd, numpy as np
+          np.random.seed(42)
+          LOTE = '${{ github.event.inputs.lote || 'lote_auto' }}'
+          n = 3000
+          pos = int(n * 0.018)
+          neg = n - pos
+
+          def gen(n_rows, infarto, drift=False):
+              glucosa = np.random.uniform(200, 400, n_rows) if drift else np.random.uniform(60, 300, n_rows)
+              return pd.DataFrame({
+                  'Edad': np.random.randint(20, 85, n_rows).astype(float),
+                  'Flag_hipertension': np.random.randint(0, 2, n_rows),
+                  'Promedio_nivel_glucosa': glucosa,
+                  'IMC': np.random.uniform(15, 50, n_rows),
+                  'Ataque_cardiaco': infarto,
+              })
+
+          ref = pd.concat([gen(neg, 0), gen(pos, 1)]).sample(frac=1, random_state=42)
+          prod = pd.concat([gen(neg, 0, drift=True), gen(pos, 1, drift=True)]).sample(frac=1, random_state=99)
+          ref.to_csv('data/referencia.csv', index=False)
+          prod.to_csv('data/produccion.csv', index=False)
+          print(f'Datos generados — referencia: {len(ref)}, producción: {len(prod)}')
+          "
+
+      - name: Ejecutar monitoreo de drift
+        run: |
+          python -c "
+          import json, sys
+          from datetime import datetime
+          import pandas as pd
+          from evidently.report import Report
+          from evidently.metric_preset import DataDriftPreset, DataSummaryPreset
+
+          LOTE = '${{ github.event.inputs.lote || 'lote_auto' }}'
+          DRIFT_UMBRAL = 0.30
+          F1_DECAY_WARNING = 0.10
+          F1_DECAY_CRITICO = 0.15
+
+          ref = pd.read_csv('data/referencia.csv')
+          prod = pd.read_csv('data/produccion.csv')
+
+          report = Report(metrics=[DataDriftPreset(), DataSummaryPreset()])
+          report.run(reference_data=ref.drop(columns=['Ataque_cardiaco']),
+                     current_data=prod.drop(columns=['Ataque_cardiaco']))
+          report.save_html('reportes/drift_report.html')
+
+          resultado = report.as_dict()
+          drift_share = resultado['metrics'][0]['result']['share_of_drifted_columns']
+
+          estado = 'OK'
+          alertas = []
+          if drift_share > DRIFT_UMBRAL:
+              estado = 'CRITICO'
+              alertas.append({'tipo': 'DATA_DRIFT_CRITICO',
+                              'share': drift_share,
+                              'accion': 'Reentrenar modelo inmediatamente'})
+
+          resumen = {
+              'timestamp': datetime.now().isoformat(),
+              'lote': LOTE,
+              'estado': estado,
+              'drift_share': drift_share,
+              'alertas': alertas,
+          }
+          ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+          with open(f'reportes/{ts}_{LOTE}_resumen.json', 'w') as f:
+              json.dump(resumen, f, indent=2)
+
+          print(json.dumps(resumen, indent=2))
+
+          # Quality gate
+          if estado == 'CRITICO':
+              sys.exit(1)
+          "
+
+      - name: Subir reportes
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: reportes-drift
+          path: reportes/
+          retention-days: 30
+
+      - name: Resumen en GitHub Actions
+        if: always()
+        run: |
+          echo "## Monitoreo Drift — Prevención Infartos" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Campo | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lote | ${{ github.event.inputs.lote || 'lote_auto' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fecha | $(date -u) |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Ver artifacts para reportes HTML completos." >> $GITHUB_STEP_SUMMARY
