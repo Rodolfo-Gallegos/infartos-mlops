@@ -34,14 +34,12 @@ services:
       - mlruns_vol:/app/mlruns
       - ./data:/app/data:ro
     environment:
-      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+      - MLFLOW_TRACKING_URI=file:///app/mlruns
       - MLFLOW_EXPERIMENT=${MLFLOW_EXPERIMENT:-infartos-prevencion-preprod}
       - PIPELINE_VERSION=${MODEL_VERSION:-latest}
-    depends_on:
-      mlflow:
-        condition: service_healthy
     networks:
       - infartos-net
+    restart: "no"
 
   api:
     build:
