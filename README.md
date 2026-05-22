@@ -50,16 +50,18 @@ Captura 128 de los 156 infartos del test set (7,170 pacientes, 2.18 % positivos)
 infartos-mlops/
 ├── src/             # módulos: data_loader, preprocessing, features, train
 ├── pipeline/        # orquestación: ingest → features → train → evaluate
-├── api/             # FastAPI: /health, /predecir
-├── tests/           # pytest unitarios + smoke
+├── api/             # FastAPI: /, /health, /predecir (+ auth, CORS, rate-limit)
+├── tests/           # pytest unitarios (35) + smoke
 ├── notebooks/       # analisis_exploratorio.ipynb
-├── .github/workflows/  # ml_pipeline.yml + monitoreo_drift.yml
+├── .github/workflows/  # ml_pipeline.yml (lint→train→docker→deploy-hf) + monitoreo_drift.yml
 ├── config.py        # config centralizada
 ├── run_pipeline.py  # orquestador
 ├── Makefile
 ├── Dockerfile + Dockerfile.trainer
 ├── docker-compose.yml + docker-compose.preprod.yml
-└── deploy.sh        # despliegue manual con rollback
+├── deploy.sh        # despliegue local con rollback
+├── deploy_hf.sh     # push a Hugging Face Spaces (orphan snapshot)
+└── deploy_gcp.sh    # push a Cloud Run (opcional)
 ```
 
 ## Quickstart
@@ -74,7 +76,7 @@ cp "../Prevención_de_infartos/Dataset prevención de infartos.csv" data/dataset
 # 3. Pipeline completo (~12 s)
 make train       # entrena, calcula threshold óptimo, valida gates
 make validate    # quality gate doble (Recall ≥ 0.70 Y F1 ≥ 0.10)
-make test        # 32 tests unitarios
+make test        # 35 tests unitarios (incluye auth)
 make lint        # flake8 sin issues
 
 # 4. Servir API
@@ -86,8 +88,9 @@ curl http://localhost:8000/health
 make preprod-up
 make smoke
 
-# 6. Monitoreo de drift
-make monitoreo
+# 6. Desplegar a Hugging Face Spaces
+export HF_USER=... HF_TOKEN=hf_...
+make deploy-hf
 ```
 
 ## Decisiones de diseño clave
@@ -120,12 +123,12 @@ consume el predictor en producción.
 | POST   | `/predecir` | Predicción individual con decisión 3-niveles |
 | GET    | `/docs`     | Swagger UI |
 
-### Ejemplo de predicción
+### Ejemplo de predicción (contra el Space en vivo)
 
 ```bash
-curl -X POST http://localhost:8000/predecir \
+curl -X POST https://rodolfo-gallegos-infartos-mlops.hf.space/predecir \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: $API_KEY"   # requerido solo si API_KEY está set en el server \
+  -H "X-API-Key: $API_KEY" \
   -d '{
     "Genero": "Hombre",
     "Edad": 65,
@@ -139,8 +142,11 @@ curl -X POST http://localhost:8000/predecir \
     "Flag_fumador": "antes_fumaba"
   }'
 
-# → {"probabilidad": 0.9413, "decision": "ALTO_RIESGO", "nivel_riesgo": "alto"}
+# → {"probabilidad": 0.8667, "decision": "ALTO_RIESGO", "nivel_riesgo": "alto"}
 ```
+
+En local el header `X-API-Key` solo es obligatorio si exportas `API_KEY` antes
+de arrancar la API.
 
 ### Seguridad y variables de entorno
 
@@ -209,7 +215,25 @@ make dvc-push
 | 3 | FastAPI /health + /predecir + singleton   | ✅ |
 | 4 | Docker + compose 3 servicios              | ✅ |
 | 5 | Makefile lint/test/train/validate/preprod | ✅ |
-| 6 | setup.cfg + pytest + smoke tests          | ✅ |
-| 7 | GitHub Actions 3 jobs + quality gates     | ✅ |
+| 6 | setup.cfg + pytest (35) + smoke tests     | ✅ |
+| 7 | GitHub Actions 4 jobs + quality gates     | ✅ |
 | 8 | EvidentlyAI + drift + cron semanal        | ✅ |
 | 9 | Deploy en la nube (Hugging Face Spaces, opc. Cloud Run) | ✅ |
+
+### Endurecimientos extra (más allá del curso)
+
+| Tema | Cómo |
+|------|------|
+| **Auth** | Header `X-API-Key` en `/predecir`, validado contra env `API_KEY`. Auth OFF si no está set (dev/CI). |
+| **CORS** | Regex restrictivo al dominio del Space; localhost para dev. |
+| **Rate limiting** | `slowapi` 30/min por IP en `/predecir`. Storage en memoria por default, configurable a Redis vía `RATE_LIMIT_STORAGE_URI`. |
+| **CI/CD** | Job `deploy-hf` en GitHub Actions (workflow_dispatch) que descarga artifacts y empuja al Space con secrets. |
+| **Errors** | `/predecir` devuelve mensajes genéricos al cliente, stack traces solo en logs. |
+
+### Lo que faltaría para "producción clínica"
+
+- Logging remoto (Sentry/Logflare) en vez de stdout.
+- Rate limiter con Redis efectivo (hoy es opt-in vía env).
+- Auth más robusta (OAuth/JWT por usuario, no un API key compartido).
+- DVC remote en S3/GCS para que `dvc pull` funcione desde CI.
+- Trigger de retraining desde el monitor de drift (hoy solo reporta).
