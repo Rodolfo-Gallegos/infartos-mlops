@@ -76,6 +76,25 @@ cp artifacts/modelo.pkl artifacts/scaler.pkl artifacts/features.csv \
 # Quitar reglas que ignorarían los artifacts en HF
 sed -i '/^artifacts\//d; /^\*\.pkl$/d' "$TMP/.gitignore" 2>/dev/null || true
 
+# Prepender frontmatter YAML que HF Spaces necesita para configurar el Space.
+# No se mantiene en el README de GitHub porque GitHub lo renderiza como tabla.
+TMP_README=$(mktemp)
+cat > "$TMP_README" <<'EOF'
+---
+title: Infartos MLOps
+emoji: ❤️
+colorFrom: red
+colorTo: pink
+sdk: docker
+app_port: 8000
+pinned: false
+license: mit
+---
+
+EOF
+cat "$TMP/README.md" >> "$TMP_README"
+mv "$TMP_README" "$TMP/README.md"
+
 # ── 3. Init repo huérfano (un solo commit, sin historia previa) ─────────
 echo "[3/4] Creando commit huérfano..."
 cd "$TMP"

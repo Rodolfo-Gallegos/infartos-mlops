@@ -1,14 +1,3 @@
----
-title: Infartos MLOps
-emoji: ❤️
-colorFrom: red
-colorTo: pink
-sdk: docker
-app_port: 8000
-pinned: false
-license: mit
----
-
 # Prevención de Infartos - Modelo MLOps
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
