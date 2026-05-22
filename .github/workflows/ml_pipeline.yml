@@ -156,3 +156,32 @@ jobs:
       - name: Limpiar contenedor
         if: always()
         run: docker rm -f infartos-api-test || true
+
+  deploy-hf:
+    name: Deploy a Hugging Face Spaces
+    runs-on: ubuntu-latest
+    needs: build-docker
+    # Solo en trigger manual (workflow_dispatch) — los modelos del CI son
+    # sintéticos. Para producción real con dataset privado: `make deploy-hf`
+    # local con artifacts reales.
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descargar artifacts del modelo (sintético, del job train)
+        uses: actions/download-artifact@v4
+        with:
+          name: model-artifacts
+          path: artifacts/
+
+      - name: Push a HF Spaces
+        env:
+          HF_USER: ${{ secrets.HF_USER }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_USER" ] || [ -z "$HF_TOKEN" ]; then
+            echo "ERROR: secrets HF_USER y HF_TOKEN no configurados en el repo."
+            echo "Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          bash deploy_hf.sh

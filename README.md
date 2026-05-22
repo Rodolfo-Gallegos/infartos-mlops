@@ -125,6 +125,7 @@ consume el predictor en producción.
 ```bash
 curl -X POST http://localhost:8000/predecir \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: $API_KEY"   # requerido solo si API_KEY está set en el server \
   -d '{
     "Genero": "Hombre",
     "Edad": 65,
@@ -141,6 +142,18 @@ curl -X POST http://localhost:8000/predecir \
 # → {"probabilidad": 0.9413, "decision": "ALTO_RIESGO", "nivel_riesgo": "alto"}
 ```
 
+### Seguridad y variables de entorno
+
+| Var | Default | Para qué |
+|---|---|---|
+| `API_KEY`                  | _(vacío)_ | Si está set, `/predecir` exige header `X-API-Key`. Vacío = auth OFF (dev/CI). |
+| `ALLOWED_ORIGINS`          | localhost | CORS exact-match, coma-separadas. |
+| `ALLOWED_ORIGIN_REGEX`     | `^https://rodolfo-gallegos-infartos-mlops\.hf\.space$` | CORS por regex. Cámbialo si forkeas. |
+| `PREDICT_RATE_LIMIT`       | `30/minute` | Límite por IP en `/predecir`. |
+| `RATE_LIMIT_STORAGE_URI`   | `memory://` | `redis://...` para que los límites persistan entre reinicios (Upstash free tier). |
+
+En HF Spaces: **Settings → Variables and secrets** → agregar `API_KEY` como secret.
+
 ## Despliegue
 
 ```bash
@@ -154,6 +167,14 @@ make deploy VERSION=v1.0.0
 export HF_USER=tu_usuario_hf
 export HF_TOKEN=hf_xxxxxxxxxxxxxxxx
 make deploy-hf
+
+# Auto-deploy desde GitHub Actions:
+#   Settings → Secrets and variables → Actions → New repository secret
+#     HF_USER  = tu_usuario_hf
+#     HF_TOKEN = hf_xxxxxxxxxxxxxxxx
+#   Luego: Actions → ML Pipeline CI/CD → Run workflow
+#   (Trigger manual a propósito: el modelo del CI es sintético; producción
+#   con dataset real se hace local con `make deploy-hf`)
 
 # Cloud Run (opcional, requiere proyecto GCP con billing)
 gcloud auth login && gcloud config set project mi-proyecto-gcp

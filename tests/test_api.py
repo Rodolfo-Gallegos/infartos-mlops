@@ -112,3 +112,29 @@ def test_fumador_none_es_valido(client):
 def test_swagger_disponible(client):
     r = client.get("/docs")
     assert r.status_code == 200
+
+
+def test_auth_bloquea_sin_api_key(client, monkeypatch):
+    monkeypatch.setattr("api.app.API_KEY", "secret-test")
+    r = client.post("/predecir", json=PACIENTE_ALTO_RIESGO)
+    assert r.status_code == 401
+
+
+def test_auth_permite_con_api_key_correcto(client, monkeypatch):
+    monkeypatch.setattr("api.app.API_KEY", "secret-test")
+    r = client.post(
+        "/predecir",
+        json=PACIENTE_ALTO_RIESGO,
+        headers={"X-API-Key": "secret-test"},
+    )
+    assert r.status_code == 200
+
+
+def test_auth_rechaza_api_key_invalida(client, monkeypatch):
+    monkeypatch.setattr("api.app.API_KEY", "secret-test")
+    r = client.post(
+        "/predecir",
+        json=PACIENTE_ALTO_RIESGO,
+        headers={"X-API-Key": "wrong"},
+    )
+    assert r.status_code == 401

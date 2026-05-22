@@ -1,8 +1,9 @@
 import os
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -18,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 VERSION = os.getenv("PIPELINE_VERSION", "1.0.0")
 
-# CORS: lista exacta + regex. Por defecto solo localhost y subdominios *.hf.space.
-# Override con env vars (coma-separadas para ALLOWED_ORIGINS).
+# CORS: por defecto solo el dominio exacto del Space en HF + localhost (dev).
+# Override con env vars (ALLOWED_ORIGINS coma-separadas; ALLOWED_ORIGIN_REGEX).
 ALLOWED_ORIGINS = [
     o.strip()
     for o in os.getenv(
@@ -29,12 +30,31 @@ ALLOWED_ORIGINS = [
     if o.strip()
 ]
 ALLOWED_ORIGIN_REGEX = os.getenv(
-    "ALLOWED_ORIGIN_REGEX", r"^https://[a-z0-9\-]+\.hf\.space$"
+    "ALLOWED_ORIGIN_REGEX",
+    r"^https://rodolfo-gallegos-infartos-mlops\.hf\.space$",
 )
 
 PREDICT_RATE_LIMIT = os.getenv("PREDICT_RATE_LIMIT", "30/minute")
+RATE_LIMIT_STORAGE = os.getenv("RATE_LIMIT_STORAGE_URI", "memory://")
 
-limiter = Limiter(key_func=get_remote_address, default_limits=[])
+# API key auth: si API_KEY está vacío, auth deshabilitada (dev/CI).
+# En prod, setear API_KEY como secret del Space.
+API_KEY = os.getenv("API_KEY", "")
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def require_api_key(api_key: str = Depends(api_key_header)) -> None:
+    if not API_KEY:
+        return
+    if api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="API key inválida o faltante")
+
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[],
+    storage_uri=RATE_LIMIT_STORAGE,
+)
 
 
 @asynccontextmanager
@@ -92,7 +112,12 @@ def health():
     )
 
 
-@app.post("/predecir", response_model=PrediccionOutput, tags=["Predicción"])
+@app.post(
+    "/predecir",
+    response_model=PrediccionOutput,
+    tags=["Predicción"],
+    dependencies=[Depends(require_api_key)],
+)
 @limiter.limit(PREDICT_RATE_LIMIT)
 def predecir(request: Request, paciente: PacienteInput):
     try:
