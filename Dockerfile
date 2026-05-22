@@ -6,25 +6,30 @@ LABEL version="1.0.0"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=8000
+    PORT=8000 \
+    HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
 
+RUN useradd -m -u 1000 user
 WORKDIR /app
+RUN chown user:user /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends gcc \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY --chown=user:user requirements.txt .
+USER user
+RUN pip install --no-cache-dir --user -r requirements.txt
 
-COPY api/ ./api/
-COPY src/ ./src/
-COPY utils/ ./utils/
-COPY config.py .
-COPY artifacts/modelo.pkl     ./artifacts/
-COPY artifacts/scaler.pkl     ./artifacts/
-COPY artifacts/features.csv   ./artifacts/
-COPY artifacts/metrics.json   ./artifacts/
-COPY artifacts/threshold.json ./artifacts/
+COPY --chown=user:user api/ ./api/
+COPY --chown=user:user src/ ./src/
+COPY --chown=user:user utils/ ./utils/
+COPY --chown=user:user config.py .
+COPY --chown=user:user artifacts/modelo.pkl     ./artifacts/
+COPY --chown=user:user artifacts/scaler.pkl     ./artifacts/
+COPY --chown=user:user artifacts/features.csv   ./artifacts/
+COPY --chown=user:user artifacts/metrics.json   ./artifacts/
+COPY --chown=user:user artifacts/threshold.json ./artifacts/
 
 EXPOSE 8000
 

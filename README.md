@@ -1,7 +1,23 @@
+---
+title: Infartos MLOps
+emoji: ❤️
+colorFrom: red
+colorTo: pink
+sdk: docker
+app_port: 8000
+pinned: false
+license: mit
+---
+
 # Prevención de Infartos - Modelo MLOps
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/)
+[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://huggingface.co/spaces/Rodolfo-Gallegos/infartos-mlops)
+
+**Demo en vivo:** https://rodolfo-gallegos-infartos-mlops.hf.space
+· [Swagger](https://rodolfo-gallegos-infartos-mlops.hf.space/docs)
+· [Health](https://rodolfo-gallegos-infartos-mlops.hf.space/health)
 
 Clasificación binaria del riesgo de infarto en asegurados, integrada en un
 pipeline MLOps reproducible (lint, tests, train, quality gate, API, monitoreo).
@@ -134,13 +150,24 @@ docker compose up -d
 # Local con rollback automático
 make deploy VERSION=v1.0.0
 
-# Cloud Run
+# Hugging Face Spaces (recomendado, gratis, sin tarjeta)
+export HF_USER=tu_usuario_hf
+export HF_TOKEN=hf_xxxxxxxxxxxxxxxx
+make deploy-hf
+
+# Cloud Run (opcional, requiere proyecto GCP con billing)
 gcloud auth login && gcloud config set project mi-proyecto-gcp
 make deploy-gcp VERSION=v1.0.0
 ```
 
-Cloud Run requiere Artifact Registry repo `infartos-mlops` en `us-central1`
-y APIs `artifactregistry.googleapis.com` + `run.googleapis.com`.
+**Hugging Face Spaces** (setup único): crear cuenta → `New Space` con
+SDK=Docker → token con permiso `write` en
+[settings/tokens](https://huggingface.co/settings/tokens). El script
+arma un snapshot temporal con los `artifacts/` incluidos (que el
+`.gitignore` excluye en el repo) y lo empuja al Space. Build ~3-6 min.
+
+**Cloud Run** requiere Artifact Registry repo `infartos-mlops` en
+`us-central1` y APIs `artifactregistry.googleapis.com` + `run.googleapis.com`.
 
 ## Data versioning con DVC
 
@@ -164,4 +191,4 @@ make dvc-push
 | 6 | setup.cfg + pytest + smoke tests          | ✅ |
 | 7 | GitHub Actions 3 jobs + quality gates     | ✅ |
 | 8 | EvidentlyAI + drift + cron semanal        | ✅ |
-| 9 | GCP Cloud Run deployment                  | ✅ |
+| 9 | Deploy en la nube (Hugging Face Spaces, opc. Cloud Run) | ✅ |

@@ -1,5 +1,5 @@
 .PHONY: all lint test train validate docker preprod-up preprod-down \
-        preprod-logs smoke deploy deploy-gcp dvc-pull dvc-push clean help
+        preprod-logs smoke deploy deploy-gcp deploy-hf dvc-pull dvc-push clean help
 
 PROJECT   = infartos-mlops
 API_IMAGE = infartos-api
@@ -20,9 +20,9 @@ train:
 	cp "../Prevención_de_infartos/Dataset prevención de infartos.csv" data/dataset.csv 2>/dev/null || true
 	python run_pipeline.py
 
-validate:
-	python -c "
-import json; from config import METRICS_PATH, RECALL_MINIMO, F1_MINIMO
+define VALIDATE_PY
+import json
+from config import METRICS_PATH, RECALL_MINIMO, F1_MINIMO
 m = json.load(open(METRICS_PATH))
 r, f = m['recall'], m['f1']
 print(f'Recall={r:.4f} (min={RECALL_MINIMO}) | F1={f:.4f} (min={F1_MINIMO})')
@@ -31,7 +31,11 @@ if r < RECALL_MINIMO: fallos.append(f'recall {r:.4f} < {RECALL_MINIMO}')
 if f < F1_MINIMO:     fallos.append(f'f1 {f:.4f} < {F1_MINIMO}')
 assert not fallos, 'Quality gate FALLIDO: ' + ' | '.join(fallos)
 print('Quality gate APROBADO')
-"
+endef
+export VALIDATE_PY
+
+validate:
+	@python -c "$$VALIDATE_PY"
 
 # ── Docker ─────────────────────────────────────────────────────────────────
 docker:
@@ -80,6 +84,9 @@ deploy:
 deploy-gcp:
 	bash deploy_gcp.sh $(VERSION)
 
+deploy-hf:
+	bash deploy_hf.sh
+
 # ── Limpieza ───────────────────────────────────────────────────────────────
 clean:
 	rm -rf artifacts/ mlruns/ reportes/ __pycache__ .coverage htmlcov/ \
@@ -101,5 +108,6 @@ help:
 	@echo "  dvc-push     - publicar datasets versionados (DVC)"
 	@echo "  deploy       - despliegue local con rollback (deploy.sh)"
 	@echo "  deploy-gcp   - despliegue a Cloud Run (deploy_gcp.sh)"
+	@echo "  deploy-hf    - despliegue a Hugging Face Spaces (deploy_hf.sh)"
 	@echo "  clean        - limpiar artifacts y caches"
 	@echo ""

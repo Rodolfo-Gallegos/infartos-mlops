@@ -1,8 +1,11 @@
 import os
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from api.predictor import predictor
 from api.schemas import PacienteInput, PrediccionOutput, HealthResponse
 
@@ -14,6 +17,24 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 VERSION = os.getenv("PIPELINE_VERSION", "1.0.0")
+
+# CORS: lista exacta + regex. Por defecto solo localhost y subdominios *.hf.space.
+# Override con env vars (coma-separadas para ALLOWED_ORIGINS).
+ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost,http://localhost:8000,http://127.0.0.1:8000",
+    ).split(",")
+    if o.strip()
+]
+ALLOWED_ORIGIN_REGEX = os.getenv(
+    "ALLOWED_ORIGIN_REGEX", r"^https://[a-z0-9\-]+\.hf\.space$"
+)
+
+PREDICT_RATE_LIMIT = os.getenv("PREDICT_RATE_LIMIT", "30/minute")
+
+limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
 
 @asynccontextmanager
@@ -32,10 +53,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -68,7 +93,8 @@ def health():
 
 
 @app.post("/predecir", response_model=PrediccionOutput, tags=["Predicción"])
-def predecir(paciente: PacienteInput):
+@limiter.limit(PREDICT_RATE_LIMIT)
+def predecir(request: Request, paciente: PacienteInput):
     try:
         resultado = predictor.predecir(paciente.model_dump())
         logger.info(
@@ -76,6 +102,8 @@ def predecir(paciente: PacienteInput):
             f"decisión={resultado['decision']}"
         )
         return PrediccionOutput(**resultado)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error en predicción: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno en la predicción")
