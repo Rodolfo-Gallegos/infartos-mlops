@@ -78,7 +78,7 @@ jobs:
           from datetime import datetime
           import pandas as pd
           from evidently.report import Report
-          from evidently.metric_preset import DataDriftPreset, DataSummaryPreset
+          from evidently.metric_preset import DataDriftPreset, DataQualityPreset
 
           LOTE = '${{ github.event.inputs.lote || 'lote_auto' }}'
           DRIFT_UMBRAL = 0.30
@@ -88,7 +88,7 @@ jobs:
           ref = pd.read_csv('data/referencia.csv')
           prod = pd.read_csv('data/produccion.csv')
 
-          report = Report(metrics=[DataDriftPreset(), DataSummaryPreset()])
+          report = Report(metrics=[DataDriftPreset(), DataQualityPreset()])
           report.run(reference_data=ref.drop(columns=['Ataque_cardiaco']),
                      current_data=prod.drop(columns=['Ataque_cardiaco']))
           report.save_html('reportes/drift_report.html')

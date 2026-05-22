@@ -25,10 +25,10 @@ jobs:
       - name: Lint (flake8)
         run: flake8 src/ pipeline/ api/ tests/ --config=setup.cfg
 
-      - name: Tests unitarios
+      - name: Tests unitarios (sin artifacts)
         run: |
-          pytest tests/ -v --tb=short --cov=src --cov=api \
-                 --cov-report=xml --ignore=tests/smoke
+          pytest tests/test_preprocessing.py tests/test_features.py \
+                 -v --tb=short --cov=src --cov-report=xml
 
       - name: Subir coverage
         uses: actions/upload-artifact@v4
@@ -102,6 +102,14 @@ jobs:
           assert not fallos, 'Quality gate FALLIDO: ' + ' | '.join(fallos)
           print('Quality gate APROBADO')
           "
+
+      - name: Tests post-training (modelo + API)
+        env:
+          RECALL_MIN: '0.30'
+          F1_MIN: '0.02'
+        run: |
+          pytest tests/test_model.py tests/test_api.py \
+                 -v --tb=short --cov=api --cov-append
 
       - name: Subir artifacts del modelo
         uses: actions/upload-artifact@v4
