@@ -115,7 +115,7 @@ En HF: **Settings → Variables and secrets** → agregar `API_KEY` como secret.
 | 8 | Evidently + drift + cron semanal | ✅ |
 | 9 | Deploy en la nube (HF Spaces, opc. Cloud Run) | ✅ |
 
-### Endurecimientos extra
+### Robustecimiento extra
 
 Auth con API key, CORS al dominio exacto del Space, rate limiting con
 `slowapi` (storage configurable a Redis), errores genéricos al cliente,
