@@ -12,9 +12,9 @@ jobs:
     name: Lint + Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           cache: 'pip'
@@ -30,7 +30,7 @@ jobs:
              --ignore=tests/smoke
 
       - name: Subir coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage.xml
@@ -40,9 +40,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-and-test
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           cache: 'pip'
@@ -103,7 +103,7 @@ jobs:
           "
 
       - name: Subir artifacts del modelo
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: model-artifacts
           path: artifacts/
@@ -113,10 +113,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: train-model
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Descargar artifacts del modelo
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: model-artifacts
           path: artifacts/
@@ -131,10 +131,10 @@ jobs:
             infartos-api:${{ github.sha }}
           sleep 15
 
-      - name: Smoke test — health
+      - name: Smoke test - health
         run: curl -f http://localhost:8000/health
 
-      - name: Smoke test — predicción
+      - name: Smoke test - predicción
         run: |
           curl -f -X POST http://localhost:8000/predecir \
             -H "Content-Type: application/json" \

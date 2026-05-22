@@ -18,7 +18,7 @@ VERSION = os.getenv("PIPELINE_VERSION", "1.0.0")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Iniciando API — cargando modelo...")
+    logger.info("Iniciando API - cargando modelo...")
     predictor.cargar()
     logger.info("Modelo cargado. API lista.")
     yield

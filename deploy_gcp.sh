@@ -1,5 +1,5 @@
 #!/bin/bash
-# deploy_gcp.sh — Despliegue a Google Cloud Run via Artifact Registry.
+# deploy_gcp.sh - Despliegue a Google Cloud Run via Artifact Registry.
 #
 # Prerrequisitos:
 #   - gcloud CLI instalado y autenticado: gcloud auth login
@@ -21,7 +21,7 @@ SERVICE="${SERVICE:-infartos-api}"
 IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${SERVICE}:${VERSION}"
 
 echo "============================================="
-echo " DEPLOY CLOUD RUN — $SERVICE:$VERSION"
+echo " DEPLOY CLOUD RUN - $SERVICE:$VERSION"
 echo " Project : $PROJECT_ID"
 echo " Region  : $REGION"
 echo " Image   : $IMAGE"
@@ -37,7 +37,7 @@ echo "[1/5] Verificando artifacts del modelo..."
 for f in artifacts/modelo.pkl artifacts/scaler.pkl artifacts/features.csv \
          artifacts/metrics.json artifacts/threshold.json; do
     if [ ! -f "$f" ]; then
-        echo "ERROR: falta $f — corre 'make train' primero."
+        echo "ERROR: falta $f - corre 'make train' primero."
         exit 1
     fi
 done
@@ -76,7 +76,7 @@ URL=$(gcloud run services describe "$SERVICE" --region="$REGION" --format='value
 
 echo ""
 echo "============================================="
-echo " DEPLOY EXITOSO — $SERVICE:$VERSION"
+echo " DEPLOY EXITOSO - $SERVICE:$VERSION"
 echo " URL    : $URL"
 echo " Health : $URL/health"
 echo " Docs   : $URL/docs"

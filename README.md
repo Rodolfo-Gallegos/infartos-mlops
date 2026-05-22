@@ -1,4 +1,4 @@
-# Prevención de Infartos — Modelo MLOps
+# Prevención de Infartos - Modelo MLOps
 
 Clasificación binaria del riesgo de infarto en asegurados, integrada en un
 pipeline MLOps reproducible (lint, tests, train, quality gate, API, monitoreo).
@@ -10,11 +10,11 @@ con `F1 ≥ 0.10` como piso operativo.
 
 | Métrica           | Valor    | Gate     |
 |-------------------|----------|----------|
-| Modelo            | `LR_balanced` | — |
+| Modelo            | `LR_balanced` | - |
 | Threshold         | `0.465`  | aprendido por max-Recall con F1≥piso |
 | Recall (test)     | **0.808** | ≥ 0.70 ✓ |
 | F1 (test)         | **0.104** | ≥ 0.10 ✓ |
-| Precision         | 0.056    | — |
+| Precision         | 0.056    | - |
 | MCC               | 0.158    | > 0 |
 | PR-AUC            | 0.090    | baseline 0.022 (4× sobre random) |
 | Balanced Accuracy | 0.752    | > 0.5 ✓ |
@@ -94,8 +94,8 @@ Flag_fumador (Nunca_fuma, antes_fumaba).
 Métodos: Mann-Whitney, Point-Biserial, ANOVA, Mutual Information.
 
 ### Limpieza
-- `Edad < 18` (n=7,539) excluidos — ruido clínico (prevalencia ~0.03 %).
-- `Genero='Other'` (n=11) excluido — cero infartos en todo el dataset.
+- `Edad < 18` (n=7,539) excluidos - ruido clínico (prevalencia ~0.03 %).
+- `Genero='Other'` (n=11) excluido - cero infartos en todo el dataset.
 - `IMC` nulos imputados con mediana del train set.
 - `Flag_fumador` nulos mapeados a `Desconocido` (categoría válida).
 - Winsorización p1–p99 en Edad, IMC, Promedio_nivel_glucosa.
@@ -114,7 +114,7 @@ Métodos: Mann-Whitney, Point-Biserial, ANOVA, Mutual Information.
   imbalanced-learn (descartado), MLflow (tracking + Model Registry)
 - **Servicio**: FastAPI + Uvicorn, Pydantic v2, singleton predictor
 - **Contenedores**: Docker, docker-compose (preprod con 3 servicios)
-- **CI/CD**: GitHub Actions — lint + tests + train + quality gate + docker build
+- **CI/CD**: GitHub Actions - lint + tests + train + quality gate + docker build
 - **Monitoreo**: Evidently AI, cron semanal (lunes 8am UTC)
 - **Calidad**: pytest (32 tests + smoke), flake8, coverage > 80 %
 

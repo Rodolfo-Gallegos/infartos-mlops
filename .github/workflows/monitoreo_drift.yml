@@ -1,4 +1,4 @@
-name: Monitoreo Drift — Prevención Infartos
+name: Monitoreo Drift - Prevención Infartos
 
 on:
   schedule:
@@ -21,8 +21,8 @@ jobs:
     name: Lint código de monitoreo
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - run: pip install flake8
@@ -33,9 +33,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-monitoreo
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           cache: 'pip'
@@ -68,7 +68,7 @@ jobs:
           prod = pd.concat([gen(neg, 0, drift=True), gen(pos, 1, drift=True)]).sample(frac=1, random_state=99)
           ref.to_csv('data/referencia.csv', index=False)
           prod.to_csv('data/produccion.csv', index=False)
-          print(f'Datos generados — referencia: {len(ref)}, producción: {len(prod)}')
+          print(f'Datos generados - referencia: {len(ref)}, producción: {len(prod)}')
           "
 
       - name: Ejecutar monitoreo de drift
@@ -124,7 +124,7 @@ jobs:
 
       - name: Subir reportes
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: reportes-drift
           path: reportes/
@@ -133,7 +133,7 @@ jobs:
       - name: Resumen en GitHub Actions
         if: always()
         run: |
-          echo "## Monitoreo Drift — Prevención Infartos" >> $GITHUB_STEP_SUMMARY
+          echo "## Monitoreo Drift - Prevención Infartos" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Campo | Valor |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY

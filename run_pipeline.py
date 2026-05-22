@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def main():
     inicio = time.time()
     logger.info("==============================")
-    logger.info("  PIPELINE — INFARTOS MLOps  ")
+    logger.info("  PIPELINE - INFARTOS MLOps  ")
     logger.info("==============================")
 
     df, mediana_imc = ingest.ejecutar()

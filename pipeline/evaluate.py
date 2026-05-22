@@ -53,7 +53,7 @@ def ejecutar(X, y, metricas: dict):
         group_names=["TN", "FP", "FN", "TP"],
         categories=["Sin Infarto", "Infarto"],
         figsize=(8, 6),
-        title=f"Matriz de Confusión — Prevención de Infartos (thr={threshold:.3f})",
+        title=f"Matriz de Confusión - Prevención de Infartos (thr={threshold:.3f})",
     )
     plt.tight_layout()
     plt.savefig(fig_path, dpi=150)

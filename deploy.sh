@@ -1,5 +1,5 @@
 #!/bin/bash
-# deploy.sh — Despliegue manual de pre-producción con rollback automático.
+# deploy.sh - Despliegue manual de pre-producción con rollback automático.
 #
 # Uso:
 #   bash deploy.sh              # despliega con tag 'latest'
@@ -14,7 +14,7 @@ IMAGE_NAME="infartos-api"
 COMPOSE_FILE="docker-compose.preprod.yml"
 
 echo "============================================="
-echo " DEPLOY PRE-PRODUCCIÓN — versión: $VERSION"
+echo " DEPLOY PRE-PRODUCCIÓN - versión: $VERSION"
 echo "============================================="
 
 # ── 1. Guardar versión actual para rollback ──────────────────────────────
@@ -38,7 +38,7 @@ echo "[4/6] Ejecutando smoke tests..."
 if pytest tests/smoke/ -v --tb=short -q; then
     echo "  Smoke tests OK"
 else
-    echo "  SMOKE TESTS FALLARON — ejecutando rollback..."
+    echo "  SMOKE TESTS FALLARON - ejecutando rollback..."
     docker compose -f $COMPOSE_FILE down
     if [ "$CURRENT" != "none" ]; then
         docker tag "$IMAGE_NAME:$CURRENT" "$IMAGE_NAME:latest"
@@ -58,7 +58,7 @@ echo "[6/6] Verificación final..."
 curl -sf http://localhost:8000/health | python3 -m json.tool
 echo ""
 echo "============================================="
-echo " DEPLOY EXITOSO — $IMAGE_NAME:$VERSION"
+echo " DEPLOY EXITOSO - $IMAGE_NAME:$VERSION"
 echo " API   : http://localhost:8000"
 echo " Docs  : http://localhost:8000/docs"
 echo " MLflow: http://localhost:5000"
