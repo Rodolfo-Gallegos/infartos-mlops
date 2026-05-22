@@ -1,7 +1,14 @@
 # Prevención de Infartos - Modelo MLOps
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/)
+
 Clasificación binaria del riesgo de infarto en asegurados, integrada en un
 pipeline MLOps reproducible (lint, tests, train, quality gate, API, monitoreo).
+
+**Entregables**: [`notebooks/analisis_exploratorio.ipynb`](notebooks/analisis_exploratorio.ipynb)
+· [`docs/Presentacion_Prevencion_Infartos.pptx`](docs/Presentacion_Prevencion_Infartos.pptx)
+· [Caso original](docs/Caso_Prevencion_Infartos.pptx)
 
 **Métrica priorizada:** `Recall` (minimizar falsos negativos clínicos)
 con `F1 ≥ 0.10` como piso operativo.
