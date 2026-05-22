@@ -1,5 +1,5 @@
 .PHONY: all lint test train validate docker preprod-up preprod-down \
-        preprod-logs smoke clean help
+        preprod-logs smoke deploy deploy-gcp dvc-pull dvc-push clean help
 
 PROJECT   = infartos-mlops
 API_IMAGE = infartos-api
@@ -22,11 +22,14 @@ train:
 
 validate:
 	python -c "
-import json; from config import METRICS_PATH, RECALL_MINIMO
+import json; from config import METRICS_PATH, RECALL_MINIMO, F1_MINIMO
 m = json.load(open(METRICS_PATH))
-r = m['recall']
-print(f'Recall={r:.4f} | Mínimo={RECALL_MINIMO}')
-assert r >= RECALL_MINIMO, f'Quality gate FALLIDO: {r:.4f} < {RECALL_MINIMO}'
+r, f = m['recall'], m['f1']
+print(f'Recall={r:.4f} (min={RECALL_MINIMO}) | F1={f:.4f} (min={F1_MINIMO})')
+fallos = []
+if r < RECALL_MINIMO: fallos.append(f'recall {r:.4f} < {RECALL_MINIMO}')
+if f < F1_MINIMO:     fallos.append(f'f1 {f:.4f} < {F1_MINIMO}')
+assert not fallos, 'Quality gate FALLIDO: ' + ' | '.join(fallos)
 print('Quality gate APROBADO')
 "
 
@@ -61,6 +64,22 @@ preprod-logs-mlflow:
 smoke:
 	pytest tests/smoke/ -v --tb=short
 
+# ── DVC ────────────────────────────────────────────────────────────────────
+dvc-pull:
+	dvc pull
+
+dvc-push:
+	dvc push
+
+# ── Deploy ─────────────────────────────────────────────────────────────────
+VERSION ?= latest
+
+deploy:
+	bash deploy.sh $(VERSION)
+
+deploy-gcp:
+	bash deploy_gcp.sh $(VERSION)
+
 # ── Limpieza ───────────────────────────────────────────────────────────────
 clean:
 	rm -rf artifacts/ mlruns/ reportes/ __pycache__ .coverage htmlcov/ \
@@ -73,10 +92,14 @@ help:
 	@echo "  lint         - flake8"
 	@echo "  test         - pytest con coverage"
 	@echo "  train        - pipeline completo (ingest→features→train→evaluate)"
-	@echo "  validate     - quality gate (recall >= 0.70)"
+	@echo "  validate     - quality gate (recall >= 0.70 y f1 >= 0.10)"
 	@echo "  docker       - construir imagen API"
 	@echo "  preprod-up   - levantar stack de 3 servicios"
 	@echo "  preprod-down - bajar stack y limpiar volúmenes"
 	@echo "  smoke        - smoke tests contra servicios reales"
+	@echo "  dvc-pull     - traer datasets versionados (DVC)"
+	@echo "  dvc-push     - publicar datasets versionados (DVC)"
+	@echo "  deploy       - despliegue local con rollback (deploy.sh)"
+	@echo "  deploy-gcp   - despliegue a Cloud Run (deploy_gcp.sh)"
 	@echo "  clean        - limpiar artifacts y caches"
 	@echo ""

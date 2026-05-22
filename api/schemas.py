@@ -8,7 +8,9 @@ class PacienteInput(BaseModel):
     Flag_hipertension: Literal[0, 1]
     Flag_problem_cardiaco: Literal[0, 1]
     Estados_civil: Literal["Si", "No"]
-    Tipo_trabajo: str = Field(description="Ej: Empresa_privada, Emprendedor, Gobierno, cuidar_ninos")
+    Tipo_trabajo: str = Field(
+        description="Ej: Empresa_privada, Emprendedor, Gobierno, cuidar_ninos"
+    )
     Zona_residencia: Literal["Urbano", "Rural"]
     Promedio_nivel_glucosa: float = Field(ge=0, description="Nivel de glucosa en sangre")
     IMC: float = Field(ge=0, le=100, description="Índice de Masa Corporal")
@@ -42,5 +44,6 @@ class HealthResponse(BaseModel):
     modelo: str
     recall: float
     f1: float
-    roc_auc: float
+    precision: float
+    threshold: float
     version: str

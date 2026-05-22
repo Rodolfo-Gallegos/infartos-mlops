@@ -1,5 +1,5 @@
 import logging
-from src.data_loader import cargar_datos, eliminar_id
+from src.data_loader import cargar_datos
 from src.preprocessing import preprocesar
 
 logging.basicConfig(

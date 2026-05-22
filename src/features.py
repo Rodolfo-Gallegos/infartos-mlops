@@ -1,10 +1,9 @@
 import logging
-import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import SelectKBest, f_classif
 from config import (
-    TARGET, ID_COL, COLUMNAS_NUMERICAS, K_FEATURES, RANDOM_STATE,
+    TARGET, ID_COL, COLUMNAS_NUMERICAS, K_FEATURES,
 )
 
 logging.basicConfig(
@@ -15,10 +14,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 MAPA_BINARIO = {
-    "Genero": {"Hombre": 0, "Mujer": 1},      # "Other" → 0 por fallback
+    "Genero": {"Hombre": 0, "Mujer": 1},
     "Estados_civil": {"No": 0, "Si": 1},
-    "Zona_residencia": {"Rural": 0, "Urbano": 1},
 }
+# Zona_residencia excluida: no es predictor cardiovascular establecido (EDA)
 
 
 def codificar_binarias(df: pd.DataFrame) -> pd.DataFrame:
@@ -83,7 +82,7 @@ def construir_features(
     df = codificar_categoricas(df)
 
     y = df[TARGET]
-    X = df.drop(columns=[TARGET, ID_COL], errors="ignore")
+    X = df.drop(columns=[TARGET, ID_COL, "Zona_residencia"], errors="ignore")
     X = X.select_dtypes(exclude=["object"])
 
     X, scaler = escalar(X, scaler if not fit else None)

@@ -11,6 +11,8 @@ MODEL_PATH = ARTIFACTS_DIR / "modelo.pkl"
 SCALER_PATH = ARTIFACTS_DIR / "scaler.pkl"
 METRICS_PATH = ARTIFACTS_DIR / "metrics.json"
 FEATURES_PATH = ARTIFACTS_DIR / "features.csv"
+TEST_INDICES_PATH = ARTIFACTS_DIR / "test_indices.json"
+THRESHOLD_PATH = ARTIFACTS_DIR / "threshold.json"
 
 SEP = ";"
 ID_COL = "ID"
@@ -33,14 +35,19 @@ COLUMNAS_CATEGORICAS = [
 
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
-TECNICA_BALANCEO = "smote"
 K_FEATURES = 10
+N_SPLITS_CV = 10
 
-RECALL_MINIMO = 0.70
+# Métrica principal = Recall (minimizar FN clínicos).
+# F1 = piso operativo, evita "todo positivo".
+# Pisos overridables vía env (útil para CI con datasets sintéticos).
+RECALL_MINIMO = float(os.getenv("RECALL_MIN", "0.70"))
+F1_MINIMO = float(os.getenv("F1_MIN", "0.10"))
 
 MLFLOW_EXPERIMENT = "infartos-prevencion"
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", str(ROOT_DIR / "mlruns"))
 MLFLOW_RUN_NAME = os.getenv("PIPELINE_VERSION", "local")
+MLFLOW_MODEL_REGISTRY = "InfartosPrevencion-Clasificador"
 
 UMBRAL_ALTO_RIESGO = 0.40
 UMBRAL_MEDIO_RIESGO = 0.20

@@ -45,7 +45,12 @@ def test_health_ok(client):
     data = r.json()
     assert data["status"] == "ok"
     assert "recall" in data
+    assert "f1" in data
+    assert "precision" in data
+    assert "threshold" in data
     assert "modelo" in data
+    assert 0.0 < data["threshold"] < 1.0
+    assert data["modelo"] in {"LR_balanced", "RF_balanced"}
 
 
 def test_info_root(client):

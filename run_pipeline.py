@@ -27,8 +27,11 @@ def main():
 
     elapsed = time.time() - inicio
     logger.info(f"Pipeline completado en {elapsed:.1f}s")
-    logger.info(f"Recall={metricas['recall']} | F1={metricas['f1']} | "
-                f"ROC-AUC={metricas['roc_auc']}")
+    logger.info(
+        f"Modelo={metricas['modelo']} | thr={metricas['threshold']} | "
+        f"Recall={metricas['recall']} | F1={metricas['f1']} | "
+        f"Precision={metricas['precision']} | MCC={metricas['mcc']}"
+    )
 
 
 if __name__ == "__main__":

@@ -1,9 +1,15 @@
-data/
+# Datos versionados por DVC: ignorar el contenido pero permitir los .dvc
+data/*
+!data/.gitignore
+!data/*.dvc
 artifacts/
 reportes/
 mlruns/
 *.pkl
 *.db
+# DVC cache
+/.dvc/cache
+/.dvc/tmp
 .env
 .env.preprod
 __pycache__/

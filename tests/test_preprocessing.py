@@ -11,7 +11,7 @@ from src.preprocessing import limpiar_datos, imputar_imc, winsorizar
 @pytest.fixture
 def df_base():
     return pd.DataFrame({
-        "Edad": [3.0, 58.0, 8.0, 45.0],
+        "Edad": [35.0, 58.0, 62.0, 45.0],
         "Flag_hipertension": [0, 1, 0, 1],
         "Flag_problem_cardiaco": [0, 0, 0, 1],
         "Estados_civil": ["No", "Si", "No", "Si"],
@@ -59,3 +59,27 @@ def test_winsorizar_no_cambia_columnas_no_incluidas(df_base):
     df_original = df_base.copy()
     df = winsorizar(df_base)
     assert df["Flag_hipertension"].equals(df_original["Flag_hipertension"])
+
+
+def test_limpiar_datos_excluye_menores():
+    df = pd.DataFrame({
+        "Edad": [15.0, 30.0, 17.0, 50.0],
+        "Flag_fumador": ["Nunca_fuma"] * 4,
+        "Genero": ["Hombre"] * 4,
+        "Ataque_cardiaco": [0, 1, 0, 1],
+    })
+    resultado = limpiar_datos(df)
+    assert (resultado["Edad"] >= 18).all()
+    assert len(resultado) == 2
+
+
+def test_limpiar_datos_excluye_genero_other():
+    df = pd.DataFrame({
+        "Edad": [30.0, 45.0, 60.0],
+        "Flag_fumador": ["Nunca_fuma"] * 3,
+        "Genero": ["Hombre", "Other", "Mujer"],
+        "Ataque_cardiaco": [0, 0, 1],
+    })
+    resultado = limpiar_datos(df)
+    assert "Other" not in resultado["Genero"].values
+    assert len(resultado) == 2

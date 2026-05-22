@@ -32,9 +32,9 @@ def test_codificar_binarias_genero(df_limpio):
     assert set(df["Genero"].unique()).issubset({0, 1})
 
 
-def test_codificar_binarias_zona(df_limpio):
-    df = codificar_binarias(df_limpio)
-    assert set(df["Zona_residencia"].unique()).issubset({0, 1})
+def test_zona_residencia_excluida_de_features(df_limpio):
+    X, y, scaler, selector = construir_features(df_limpio, fit=True)
+    assert "Zona_residencia" not in X.columns
 
 
 def test_codificar_categoricas_crea_dummies(df_limpio):

@@ -20,10 +20,11 @@ COPY api/ ./api/
 COPY src/ ./src/
 COPY utils/ ./utils/
 COPY config.py .
-COPY artifacts/modelo.pkl    ./artifacts/
-COPY artifacts/scaler.pkl    ./artifacts/
-COPY artifacts/features.csv  ./artifacts/
-COPY artifacts/metrics.json  ./artifacts/
+COPY artifacts/modelo.pkl     ./artifacts/
+COPY artifacts/scaler.pkl     ./artifacts/
+COPY artifacts/features.csv   ./artifacts/
+COPY artifacts/metrics.json   ./artifacts/
+COPY artifacts/threshold.json ./artifacts/
 
 EXPOSE 8000
 

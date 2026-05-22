@@ -61,7 +61,8 @@ def health():
         modelo=m.get("modelo", "desconocido"),
         recall=m.get("recall", 0),
         f1=m.get("f1", 0),
-        roc_auc=m.get("roc_auc", 0),
+        precision=m.get("precision", 0),
+        threshold=predictor.umbral_alto,
         version=VERSION,
     )
 

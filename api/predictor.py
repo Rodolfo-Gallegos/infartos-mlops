@@ -1,10 +1,9 @@
 import json
 import logging
 import pickle
-import numpy as np
 import pandas as pd
 from config import (
-    MODEL_PATH, SCALER_PATH, METRICS_PATH, FEATURES_PATH,
+    MODEL_PATH, SCALER_PATH, METRICS_PATH, FEATURES_PATH, THRESHOLD_PATH,
     UMBRAL_ALTO_RIESGO, UMBRAL_MEDIO_RIESGO, COLUMNAS_NUMERICAS,
 )
 from src.features import codificar_binarias, codificar_categoricas
@@ -18,6 +17,8 @@ class Predictor:
         self.scaler = None
         self.metricas = {}
         self.features = []
+        self.umbral_alto = UMBRAL_ALTO_RIESGO
+        self.umbral_medio = UMBRAL_MEDIO_RIESGO
         self._cargado = False
 
     def cargar(self):
@@ -28,10 +29,21 @@ class Predictor:
         with open(METRICS_PATH) as f:
             self.metricas = json.load(f)
         self.features = pd.read_csv(FEATURES_PATH)["feature"].tolist()
+
+        # Threshold operativo aprendido en entrenamiento (max Recall con piso F1).
+        # REVISAR queda en [umbral_alto/2, umbral_alto); si quedara por encima del
+        # default fijo, prevalece el default fijo como piso de "medio".
+        if THRESHOLD_PATH.exists():
+            with open(THRESHOLD_PATH) as f:
+                thr_info = json.load(f)
+            self.umbral_alto = float(thr_info["threshold"])
+            self.umbral_medio = min(UMBRAL_MEDIO_RIESGO, self.umbral_alto * 0.5)
+
         self._cargado = True
         logger.info(
             f"Modelo '{self.metricas.get('modelo')}' cargado | "
-            f"Recall={self.metricas.get('recall')} | "
+            f"Recall={self.metricas.get('recall')} F1={self.metricas.get('f1')} | "
+            f"thr_alto={self.umbral_alto:.3f} thr_medio={self.umbral_medio:.3f} | "
             f"Features={len(self.features)}"
         )
 
@@ -53,9 +65,9 @@ class Predictor:
 
         proba = float(self.modelo.predict_proba(df)[0][1])
 
-        if proba >= UMBRAL_ALTO_RIESGO:
+        if proba >= self.umbral_alto:
             decision, nivel = "ALTO_RIESGO", "alto"
-        elif proba >= UMBRAL_MEDIO_RIESGO:
+        elif proba >= self.umbral_medio:
             decision, nivel = "REVISAR", "medio"
         else:
             decision, nivel = "BAJO_RIESGO", "bajo"

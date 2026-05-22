@@ -1,9 +1,7 @@
 import logging
-import numpy as np
 import pandas as pd
-from scipy.stats import mstats
 from config import (
-    COLUMNAS_WINSORIZAR, P_WINSOR_LOW, P_WINSOR_HIGH, TARGET,
+    COLUMNAS_WINSORIZAR, P_WINSOR_LOW, P_WINSOR_HIGH,
 )
 
 logging.basicConfig(
@@ -21,10 +19,21 @@ def limpiar_datos(df: pd.DataFrame) -> pd.DataFrame:
 
     df["Edad"] = df["Edad"].astype(int)
 
-    # Flag_fumador: NaN → categoría "Desconocido" (30% nulos, no imputar)
     nulos_fumador = df["Flag_fumador"].isna().sum()
     df["Flag_fumador"] = df["Flag_fumador"].fillna("Desconocido")
     logger.info(f"Flag_fumador: {nulos_fumador} nulos → 'Desconocido'")
+
+    # Genero='Other': 0 infartos en todo el dataset → no aporta señal predictiva
+    n_other = (df["Genero"] == "Other").sum()
+    if n_other > 0:
+        df = df[df["Genero"] != "Other"].reset_index(drop=True)
+        logger.info(f"Genero='Other': {n_other} filas excluidas (0 infartos)")
+
+    # Menores de 18: prevalencia de infarto ~0.03% (2/7539) → ruido clínico
+    n_menores = (df["Edad"] < 18).sum()
+    if n_menores > 0:
+        df = df[df["Edad"] >= 18].reset_index(drop=True)
+        logger.info(f"Edad < 18: {n_menores} filas excluidas (ruido clínico)")
 
     return df
 
