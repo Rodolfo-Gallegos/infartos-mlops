@@ -1,7 +1,7 @@
 import os
 import logging
 from contextlib import asynccontextmanager
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -43,7 +43,7 @@ API_KEY = os.getenv("API_KEY", "")
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
-def require_api_key(api_key: str = Depends(api_key_header)) -> None:
+def require_api_key(api_key: str = Security(api_key_header)) -> None:
     if not API_KEY:
         return
     if api_key != API_KEY:
